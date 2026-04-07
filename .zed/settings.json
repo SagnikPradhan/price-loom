@@ -8,4 +8,12 @@
       },
     },
   },
+
+  "languages": {
+    "SQL": {
+      "formatter": {
+        "language_server": { "name": "postgres-language-server" },
+      },
+    },
+  },
 }

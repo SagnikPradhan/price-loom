@@ -19,19 +19,19 @@ pub fn get_object_store(url_str: String) -> Result<Arc<dyn ObjectStore>> {
 }
 
 #[derive(Debug)]
-pub struct AppFile {
+pub struct SaveSourceFileOptions {
     pub date: NaiveDate,
-    pub kind: AppFileKind,
+    pub kind: Source,
     pub data: Bytes,
 }
 
 #[derive(Debug, Display, IntoStaticStr)]
 #[strum(serialize_all = "lowercase")]
-pub enum AppFileKind {
+pub enum Source {
     NSE,
 }
 
-pub async fn save_file(store: &Arc<dyn ObjectStore>, file: AppFile) -> Result<()> {
+pub async fn save_file(store: &Arc<dyn ObjectStore>, file: SaveSourceFileOptions) -> Result<()> {
     debug!("Saving file - {:?} {:?}", file.kind, file.date);
 
     let path = get_file_path(&file.date, &file.kind);
@@ -45,7 +45,7 @@ pub async fn save_file(store: &Arc<dyn ObjectStore>, file: AppFile) -> Result<()
 pub async fn read_file(
     store: &Arc<dyn ObjectStore>,
     date: &NaiveDate,
-    kind: &AppFileKind,
+    kind: &Source,
 ) -> Result<Option<Bytes>> {
     debug!("Reading file - {:?} {:?}", &date, &kind);
     let path = get_file_path(&date, kind);
@@ -57,7 +57,7 @@ pub async fn read_file(
     }
 }
 
-fn get_file_path(date: &NaiveDate, kind: &AppFileKind) -> Path {
+fn get_file_path(date: &NaiveDate, kind: &Source) -> Path {
     let filename = format!("{}.json", date);
     Path::from(format!("{}/{}", kind.to_string(), filename))
 }

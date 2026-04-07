@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Ok, Result};
-use axum::Json;
-use axum::extract::{Path, State};
 use bytes::Bytes;
 use chrono::NaiveDate;
 use object_store::ObjectStore;
@@ -10,26 +8,11 @@ use reqwest::StatusCode;
 use serde_json::json;
 use tracing::{debug, info, instrument, warn};
 
-use crate::AppState;
-use crate::bhav::{Bhav, BhavRecord};
-use crate::shared::error::AppError;
-use crate::shared::storage::{AppFile, AppFileKind, read_file, save_file};
-
-pub async fn get_bhav_data_handler(
-    Path(date_str): Path<String>,
-    State(state): State<AppState>,
-) -> Result<Json<Bhav>, AppError> {
-    let date = NaiveDate::parse_from_str(&date_str, "%Y-%m-%d").context("Found invalid date!")?;
-
-    get_bhav_data(&state.object_store, date)
-        .await?
-        .map(|(_, data)| Json(data))
-        .context("Found no bhavcopy!")
-        .map_err(AppError::from)
-}
+use crate::shared::storage::{SaveSourceFileOptions, Source, read_file, save_file};
+use crate::types::{Bhav, BhavRecord};
 
 #[instrument(skip_all)]
-async fn get_bhav_data(
+pub async fn get_bhav_data(
     store: &Arc<dyn ObjectStore>,
     date: NaiveDate,
 ) -> Result<Option<(Bytes, Bhav)>> {
@@ -50,7 +33,7 @@ pub async fn get_or_fetch_nse_bhav(
     store: &Arc<dyn ObjectStore>,
     date: NaiveDate,
 ) -> Result<Option<Bytes>> {
-    if let Some(data) = read_file(store, &date, &AppFileKind::NSE).await? {
+    if let Some(data) = read_file(store, &date, &Source::NSE).await? {
         return Ok(Some(data));
     }
 
@@ -60,7 +43,8 @@ pub async fn get_or_fetch_nse_bhav(
     };
 
     let bytes = Bytes::from(data);
-    save_file(store, AppFile { date, kind: AppFileKind::NSE, data: bytes.clone() }).await?;
+    save_file(store, SaveSourceFileOptions { date, kind: Source::NSE, data: bytes.clone() })
+        .await?;
 
     Ok(Some(bytes))
 }

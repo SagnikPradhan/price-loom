@@ -1,22 +1,18 @@
-use std::sync::Arc;
-
 use anyhow::{Context, Result};
 use axum::Router;
 use axum::routing::get;
 use tracing::info;
 
-use crate::bhav_nse::get_bhav_data_handler;
+use crate::services::bhav::get_bhav_data_handler;
 use crate::shared::config::AppConfig;
+use crate::shared::database::get_db_connection;
 use crate::shared::storage::get_object_store;
+use crate::types::AppState;
 
-mod bhav;
-mod bhav_nse;
+mod domain;
+mod services;
 mod shared;
-
-#[derive(Clone)]
-pub struct AppState {
-    object_store: Arc<dyn object_store::ObjectStore>,
-}
+mod types;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,10 +20,11 @@ async fn main() -> Result<()> {
 
     let config = AppConfig::from_env().context("failed to load configuration")?;
 
+    let db = get_db_connection(&config.connection_uri).await?;
     let object_store = get_object_store(config.object_store)?;
     let app = Router::new()
         .route("/bhav/nse/{date}", get(get_bhav_data_handler))
-        .with_state(AppState { object_store });
+        .with_state(AppState { object_store, db });
 
     let address = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(&address)

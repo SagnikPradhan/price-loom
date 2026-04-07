@@ -20,4 +20,8 @@ bytes = "1.11.1"
 dotenvy = "0.15.7"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
-sqlx = { version = "0.8.6", features = ["default", "postgres", "chrono", "runtime-tokio"] }
+sqlx = { version = "0.8.6", features = ["default", "postgres", "chrono", "runtime-tokio", "uuid"] }
+sea-query = { version = "1.0.0-rc.32", features = ["derive", "thread-safe", "backend-postgres", "with-chrono", "with-uuid"] }
+sea-query-sqlx = { version = "0.8.0-rc.14", features = ["sqlx-postgres", "with-chrono", "with-uuid"] }
+serde-env = "0.2.0"
+uuid = "1.23.0"

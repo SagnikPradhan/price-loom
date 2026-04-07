@@ -1,33 +1,23 @@
-use std::env;
+use anyhow::Result;
+use serde::Deserialize;
 
-use anyhow::{Context, Result};
-
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct AppConfig {
+    #[serde(rename = "PRICE_LOOM_PORT", default = "default_port")]
     pub port: u16,
+    #[serde(rename = "PRICE_LOOM_OBJECT_STORE")]
     pub object_store: String,
+    #[serde(rename = "PRICE_LOOM_DATABASE_URL")]
+    pub connection_uri: String,
+}
+
+fn default_port() -> u16 {
+    3000
 }
 
 impl AppConfig {
     pub fn from_env() -> Result<Self> {
-        dotenvy::dotenv()?;
-
-        Ok(Self {
-            port: get_env_parse("PRICE_LOOM_PORT").unwrap_or(3000),
-            object_store: get_env("PRICE_LOOM_OBJECT_STORE")?,
-        })
+        dotenvy::dotenv().ok();
+        Ok(serde_env::from_env()?)
     }
-}
-
-fn get_env(key: &str) -> Result<String> {
-    env::var(key).with_context(|| format!("Missing required env var `{key}`"))
-}
-
-fn get_env_parse<T>(key: &str) -> Result<T>
-where
-    T: std::str::FromStr,
-    T::Err: std::error::Error + Send + Sync + 'static,
-{
-    let value = get_env(key)?;
-    value.parse::<T>().with_context(|| format!("Invalid value for `{key}`: `{value}`"))
 }

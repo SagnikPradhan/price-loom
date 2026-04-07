@@ -1,0 +1,19 @@
+{
+  "db": {
+    "connectionString": "postgres://price-loom-user:price-loom-password@localhost:5432/price-loom?sslmode=disable",
+    "allowStatementExecutionsAgainst": ["127.0.0.1/*", "localhost/*"],
+  },
+
+  "format": {
+    "enabled": true,
+    "lineWidth": 200,
+    "indentStyle": "tabs",
+    "keywordCase": "upper",
+    "constantCase": "upper",
+    "typeCase": "upper",
+  },
+
+  "splinter": {
+    "enabled": true,
+  },
+}
