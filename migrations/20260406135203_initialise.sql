@@ -2,7 +2,7 @@ CREATE TYPE source AS ENUM ('nse');
 
 CREATE TYPE instrument_type AS ENUM ('CUR', 'CDF', 'CDO', 'IRF', 'IRT', 'IRO', 'STK', 'COM', 'COF', 'COO', 'FUO', 'STF', 'STO', 'IDF', 'IDO');
 
-CREATE TYPE instrument_segment AS ENUM ('EQ', 'FO', 'CD', 'IR', 'COM');
+CREATE TYPE instrument_segment AS ENUM ('CM', 'FO', 'CD', 'COM');
 
 CREATE TABLE source_file (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -10,8 +10,7 @@ CREATE TABLE source_file (
 	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 	source source NOT NULL,
 	date DATE NOT NULL,
-	key TEXT NOT NULL,
-	checksum TEXT NOT NULL
+	key TEXT NOT NULL
 );
 
 CREATE TABLE instrument (
@@ -22,7 +21,7 @@ CREATE TABLE instrument (
 	source source NOT NULL,
 	instrument_type instrument_type NOT NULL,
 	instrument_id TEXT,
-	isin TEXT NOT NULL,
+	isin TEXT,
 	ticker_symbol TEXT NOT NULL,
 	security_series TEXT NOT NULL,
 	instrument_name TEXT
@@ -44,7 +43,7 @@ CREATE TABLE price (
 	previous_close_price DOUBLE PRECISION NOT NULL,
 	total_traded_volume BIGINT NOT NULL,
 	total_traded_value DOUBLE PRECISION NOT NULL,
-	total_number_of_trades BIGINT NOT NULL,
+	total_number_of_trades BIGINT,
 	session_id TEXT,
 	market_lot_size BIGINT,
 	remarks TEXT

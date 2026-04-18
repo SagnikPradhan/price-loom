@@ -3,12 +3,10 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
-    #[serde(rename = "PRICE_LOOM_PORT", default = "default_port")]
+    #[serde(default = "default_port")]
     pub port: u16,
-    #[serde(rename = "PRICE_LOOM_OBJECT_STORE")]
     pub object_store: String,
-    #[serde(rename = "PRICE_LOOM_DATABASE_URL")]
-    pub connection_uri: String,
+    pub database_url: String,
 }
 
 fn default_port() -> u16 {
@@ -17,7 +15,7 @@ fn default_port() -> u16 {
 
 impl AppConfig {
     pub fn from_env() -> Result<Self> {
-        dotenvy::dotenv().ok();
-        Ok(serde_env::from_env()?)
+        dotenvy::dotenv()?;
+        Ok(serde_env::from_env_with_prefix("PRICE_LOOM")?)
     }
 }

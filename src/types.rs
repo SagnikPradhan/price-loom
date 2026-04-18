@@ -1,7 +1,10 @@
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use chrono::NaiveDate;
+use ordered_float::NotNan;
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::Type;
 use sqlx::{Pool, Postgres};
 use strum::Display;
 
@@ -13,123 +16,120 @@ pub struct AppState {
 
 #[derive(Debug, Serialize)]
 pub struct Bhav {
-    pub prices: Vec<BhavRecord>,
+    pub key: String,
+    pub date: NaiveDate,
+    pub source: InstrumentSource,
+    pub prices: BTreeSet<BhavRecord>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BhavRecord {
-    #[serde(rename = "TradDt", alias = "TIMESTAMP")]
-    pub trade_date: String,
-    #[serde(rename = "BizDt")]
-    pub business_date: Option<String>,
-    #[serde(rename = "Sgmt")]
-    pub segment: Option<InstrumentSegment>,
-    #[serde(rename = "Src")]
-    pub source: Option<InstrumentSource>,
-    #[serde(rename = "FinInstrmTp", alias = "INSTRUMENT")]
-    pub instrument_type: Option<InstrumentType>,
-    #[serde(rename = "FinInstrmId")]
-    pub instrument_id: Option<String>,
-    #[serde(rename = "ISIN")]
-    pub isin: String,
-    #[serde(rename = "TckrSymb", alias = "SYMBOL")]
+    pub source: InstrumentSource,
+    pub segment: InstrumentSegment,
+    pub instrument_type: InstrumentType,
+    pub trade_date: NaiveDate,
     pub ticker_symbol: String,
-    #[serde(rename = "SctySrs", alias = "SERIES")]
+    pub isin: Option<String>,
+
+    pub business_date: Option<NaiveDate>,
+    pub instrument_id: Option<String>,
     pub security_series: String,
-    #[serde(rename = "XpryDt", alias = "EXPIRY_DT")]
     pub expiry_date: Option<String>,
-    #[serde(rename = "FininstrmActlXpryDt")]
     pub actual_expiry_date: Option<String>,
-    #[serde(rename = "StrkPric", alias = "STRIKE_PR")]
-    pub strike_price: Option<f64>,
-    #[serde(rename = "OptnTp", alias = "OPTION_TYP")]
+    pub strike_price: Option<NotNan<f64>>,
     pub option_type: Option<String>,
-    #[serde(rename = "FinInstrmNm")]
     pub instrument_name: Option<String>,
-    #[serde(rename = "OpnPric", alias = "OPEN")]
-    pub open_price: f64,
-    #[serde(rename = "HghPric", alias = "HIGH")]
-    pub high_price: f64,
-    #[serde(rename = "LwPric", alias = "LOW")]
-    pub low_price: f64,
-    #[serde(rename = "ClsPric", alias = "CLOSE")]
-    pub close_price: f64,
-    #[serde(rename = "LastPric", alias = "LAST")]
-    pub last_price: f64,
-    #[serde(rename = "PrvsClsgPric", alias = "PREVCLOSE")]
-    pub previous_close_price: f64,
-    #[serde(rename = "UndrlygPric")]
-    pub underlying_price: Option<f64>,
-    #[serde(rename = "SttlmPric", alias = "SETTLE_PR")]
-    pub settlement_price: Option<f64>,
-    #[serde(rename = "OpnIntrst", alias = "OPEN_INT")]
-    pub open_interest: Option<u64>,
-    #[serde(rename = "ChngInOpnIntrst", alias = "CHG_IN_OI")]
+    pub open_price: NotNan<f64>,
+    pub high_price: NotNan<f64>,
+    pub low_price: NotNan<f64>,
+    pub close_price: NotNan<f64>,
+    pub last_price: NotNan<f64>,
+    pub previous_close_price: NotNan<f64>,
+    pub underlying_price: Option<NotNan<f64>>,
+    pub settlement_price: Option<NotNan<f64>>,
+    pub open_interest: Option<i64>,
     pub change_in_open_interest: Option<i64>,
-    #[serde(rename = "TtlTradgVol", alias = "TOTTRDQTY", alias = "CONTRACTS")]
-    pub total_traded_volume: u64,
-    #[serde(rename = "TtlTrfVal", alias = "TOTTRDVAL", alias = "VAL_INLAKH")]
-    pub total_traded_value: f64,
-    #[serde(rename = "TtlNbOfTxsExctd", alias = "TOTALTRADES")]
-    pub total_number_of_trades: u64,
-    #[serde(rename = "SsnId")]
+    pub total_traded_volume: i64,
+    pub total_traded_value: NotNan<f64>,
+    pub total_number_of_trades: Option<i64>,
     pub session_id: Option<String>,
-    #[serde(rename = "NewBrdLotQty")]
-    pub market_lot_size: Option<u64>,
-    #[serde(rename = "Rmks")]
+    pub market_lot_size: Option<i64>,
     pub remarks: Option<String>,
 }
 
-#[derive(Debug, Display, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Type)]
+#[sqlx(type_name = "instrument_type")]
 pub enum InstrumentType {
+    #[sqlx(rename = "CUR")]
     #[serde(rename = "CUR")]
     Currency,
+    #[sqlx(rename = "CDF")]
     #[serde(rename = "CDF")]
     CurrencyFutures,
+    #[sqlx(rename = "CDO")]
     #[serde(rename = "CDO")]
     CurrencyOptions,
+    #[sqlx(rename = "IRF")]
     #[serde(rename = "IRF")]
     InterestRateFuturesMiborGsec,
+    #[sqlx(rename = "IRT")]
     #[serde(rename = "IRT")]
     InterestRateFuturesTbill,
+    #[sqlx(rename = "IRO")]
     #[serde(rename = "IRO")]
     InterestRateOptions,
+    #[sqlx(rename = "STK")]
     #[serde(rename = "STK")]
     Stock,
+    #[sqlx(rename = "COM")]
     #[serde(rename = "COM")]
     Commodity,
+    #[sqlx(rename = "COF")]
     #[serde(rename = "COF")]
     CommodityFutures,
+    #[sqlx(rename = "COO")]
     #[serde(rename = "COO")]
     CommodityOptions,
+    #[sqlx(rename = "FUO")]
     #[serde(rename = "FUO")]
     OptionsOnFutures,
+    #[sqlx(rename = "STF")]
     #[serde(rename = "STF")]
     StockFutures,
+    #[sqlx(rename = "STO")]
     #[serde(rename = "STO")]
     StockOptions,
+    #[sqlx(rename = "IDF")]
     #[serde(rename = "IDF")]
     IndexFutures,
+    #[sqlx(rename = "IDO")]
     #[serde(rename = "IDO")]
     IndexOptions,
 }
 
-#[derive(Debug, Display, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Type)]
+#[sqlx(type_name = "instrument_segment")]
 pub enum InstrumentSegment {
+    #[sqlx(rename = "CM")]
     #[serde(rename = "CM")]
     CaptialMarkets,
+    #[sqlx(rename = "FO")]
     #[serde(rename = "FO")]
     FuturesAndOptions,
+    #[sqlx(rename = "CD")]
     #[serde(rename = "CD")]
     CurrencyDerivatives,
+    #[sqlx(rename = "COM")]
     #[serde(rename = "COM")]
     CommoditiesDerivatives,
 }
 
-#[derive(Debug, Display, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Display, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Type,
+)]
+#[sqlx(type_name = "source")]
+#[sqlx(rename_all = "lowercase")]
 pub enum InstrumentSource {
-    #[serde(rename = "BSE")]
-    BSE,
     #[serde(rename = "NSE")]
     NSE,
 }
@@ -148,16 +148,16 @@ pub struct Instrument {
 pub struct Price {
     pub trade_date: NaiveDate,
     pub business_date: Option<NaiveDate>,
-    pub open_price: f64,
-    pub high_price: f64,
-    pub low_price: f64,
-    pub close_price: f64,
-    pub last_price: f64,
-    pub previous_close_price: f64,
-    pub total_traded_volume: u64,
-    pub total_traded_value: f64,
-    pub total_number_of_trades: u64,
+    pub open_price: NotNan<f64>,
+    pub high_price: NotNan<f64>,
+    pub low_price: NotNan<f64>,
+    pub close_price: NotNan<f64>,
+    pub last_price: NotNan<f64>,
+    pub previous_close_price: NotNan<f64>,
+    pub total_traded_volume: i64,
+    pub total_traded_value: NotNan<f64>,
+    pub total_number_of_trades: i64,
     pub session_id: Option<String>,
-    pub market_lot_size: Option<u64>,
+    pub market_lot_size: Option<i64>,
     pub remarks: Option<String>,
 }
